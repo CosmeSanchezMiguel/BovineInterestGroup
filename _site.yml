@@ -1,6 +1,6 @@
-name: "MyLabJournal"
+name: "Bovine Interest Group"
 navbar:
-  title: "MyLabJournal"
+  title: "Bovine Interest Group"
   left:
     - text: "Home"
       href: index.html
