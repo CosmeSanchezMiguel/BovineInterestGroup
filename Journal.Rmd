@@ -11,7 +11,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=TRUE)
+knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=TRUE, echo = FALSE)
 ```
 
 IMPORTANT: You can delete everything in here and start fresh. You might want to start by not deleting anything above this line until you know what that stuff is doing.
@@ -451,7 +451,7 @@ pal <- colorBin("YlOrRd", domain = final$Count, bins = bins)
 
 final <- rmapshaper::ms_simplify(final)
 
-labels <- paste("<p>", "<b>",IRELAND2$EDNAME,"</b>" ,"</p>",
+labels <- paste("<p>", "<b>",final$EDNAME,"</b>" ,"</p>",
                 "<p>","No. of cattle: ","<b>",format(round(final$Count,digits=2), nsmall=0, big.mark=","),"</b>","</p>",sep="")
 
 leaflet(final) %>% setView(-7, 53, zoom = 7) %>% 
@@ -473,9 +473,13 @@ leaflet(final) %>% setView(-7, 53, zoom = 7) %>%
             opacity = 0.7,
             "topright",title="Bovine P-Ms ")
 
-pal = mapviewPalette("mapviewTopoColors")
-mapview(final,alpha.regions = 0.1,zcol="Count",col.regions = pal(16), at = seq(0, 16, 2), legend = TRUE)
 
+
+```
+
+```{r}
+pal = mapviewPalette("mapviewTopoColors")
+mapview(final,alpha.regions = 0.1,zcol="EDNAME",col.regions = pal(16), at = seq(0, 16, 2), legend = FALSE,popup = popupTable(final))
 
 ```
 
