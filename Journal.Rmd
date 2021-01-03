@@ -126,3 +126,356 @@ print(a)
 # Replace this with problem 4
 
 And keep going. Try to solve the problems with different scripts that provide the same solution. Good luck, Happy coding.
+
+
+```{r}
+
+library(leaflet)
+library(rgdal)
+library(dplyr)
+library(sf)
+library(ggplot2)
+library(RColorBrewer)
+library(readxl)
+library(readr)
+library(ggrepel)
+library(stringr)
+library(htmltools)
+
+data<- read_excel("C:/Users/cosme.sanchez.AGRICULTURE/Desktop/BovineGroup/data/2000Data_01012020to31102020.xlsx", 
+    sheet = "CarcassFoetus", col_types = c("text", 
+        "text", "date", "text", "text", 
+        "text", "text", "text", "text", "text", 
+        "text", "text", "text", "text", "text", 
+        "text", "text", "text", "text", "text", 
+        "text", "text", "text", "text", "text", 
+        "text", "text"))
+data <- data %>% filter(CARCASSCLASS=="Carcass",SPECIES=="Bovine")
+
+data$DIAGNOSIS <- str_trim(data$DIAGNOSIS)
+data$AGENT <- str_trim(data$AGENT)
+data$SYSTEM <- str_trim(data$SYSTEM)
+data$AETIOLOGY <- str_trim(data$AETIOLOGY)
+
+data$AGE <- as.numeric(data$AGE)
+
+datamaster <- data %>% filter(CARCASSCLASS=="Carcass",SPECIES=="Bovine",!DIAGNOSIS %in% c("No Diagnosis-part carcase","Diagnosis not listed","Autolysis","Not Applicable"))%>%mutate(AGE_UNIT2=recode(AGE_UNIT,"Days"=24,   "Hours"=1,  "Months"=720, "Weeks"=168,  "Years"=8760), AGE2=AGE_UNIT2*AGE, group=cut(AGE2, breaks=c(0,720,3600,8640,Inf), labels=c("Neonatal (0-1 month old)","Calves (1-5 months old)","Weanling (6-12 months old)","Adult Cattle (over 12 months old)")),category=recode(DIAGNOSIS,
+                                                  'Bacteraemia/septicaemia'='Systemic Infections',
+'Trauma'='Trauma',
+'Drenching gun injuries'='Trauma',
+'Neonatal hypothermia/starvation'='Nutritional/metabolic conditions',
+'Starvation'='Nutritional/metabolic conditions',
+'Pyothorax'='Respiratory Infections',
+'Nephrosis'='Urinary Tract conditions',
+'Congenital hepatic fibrosis'='Hereditary and developmental abnormality',
+'Cystitis'='Urinary Tract conditions',
+'Hydrocephalus'='Hereditary and developmental abnormality',
+'Coccidiosis'='GIT Infections',
+'Pneumonia'='Respiratory Infections',
+'Septicaemia'='Systemic Infections',
+'Abomasal Ulcer/Perf/Peritonitis'='GIT ulcer/perforation/foreign body',
+'Abomasal Ulcer'='GIT ulcer/perforation/foreign body',
+'Enteritis'='GIT Infections',
+'Myocarditis'='Cardiac/circulatory conditions',
+'Hypomagnesaemia/ Grass tetany'='Nutritional/metabolic conditions',
+'Pneumonia  and Septicaemia'='Systemic Infections',
+'Peritonitis'='Peritonitis',
+'Abomasum Emptying Defect'='Hereditary and developmental abnormality',
+'No Diagnosis'='Diagnosis not reached',
+'Enteritis- haemorrhagic'='GIT Infections',
+'Abscessation-Hepatic'='Liver disease',
+'Necrobacillosis'='Liver disease',
+'Autolysis'='Autolysis',
+'Atresia'='Hereditary and developmental abnormality',
+'Poisoning'='Poisoning',
+'Enteritis- haemorrhagic'='Clostridial disease',
+'Endocarditis'='Cardiac/circulatory conditions',
+'Polyserositis'='Systemic Infections',
+'Enteritis and Septicaemia'='Systemic Infections',
+'Mastitis'='Mastitis',
+'Haemorrhage'='Cardiac/circulatory conditions',
+'TB'='Tuberculosis',
+'Rumenitis'='GIT Infections',
+'No Diagnosis-part carcase'='Diagnosis not reached',
+'Nephritis'='Urinary Tract conditions',
+'Omphalophlebitis'='Navel Ill/Joint Ill',
+'Malnutrition'='Nutritional/metabolic conditions',
+'Diagnosis not listed'='Diagnosis not reached',
+'Abomasitis- emphysematous'='GIT Infections',
+'Meningitis'='CNS',
+'Osteomyelitis'='Integument/Musculoskeletal',
+'Intususception'='GIT torsion/obstruction',
+'Pneumonia - Aspiration'='Respiratory Infections',
+'Enteritis and Pneumonia'='Systemic Infections',
+'Acidosis Ruminal'='Nutritional/metabolic conditions',
+'Gastritis'='GIT Infections',
+'Tumour - misc'='Tumour',
+'Cellulitis'='Integument/Musculoskeletal',
+'Enterotoxaemia'='Clostridial disease',
+'Metritis'='Reproductive Tract Conditions',
+'Pericarditis'='Cardiac/circulatory conditions',
+'Reticulitis - Foreign Body'='GIT ulcer/perforation/foreign body',
+'Mesenteric Torsion'='GIT torsion/obstruction',
+'Toxaemia'='Systemic Infections',
+'Goitre'='Nutritional/metabolic conditions',
+'Dystocia'='Fractures/Calving injuries',
+'Intestinal torsion'='GIT torsion/obstruction',
+'Pyelonephritis/cystitis'='Urinary Tract conditions',
+'Gastric torsion'='GIT torsion/obstruction',
+'Gastro-enteritis'='GIT Infections',
+'Ostertagiasis Type II'='GIT Infections',
+'Navel ill/Joint ill'='Navel Ill/Joint Ill',
+'Parasitic Gastro-enteritis'='GIT Infections',
+'Encephalopathy'='CNS',
+'Abscessation-Misc'='Abscessation',
+'Encephalitis'='CNS',
+'Nephropathy'='Urinary Tract conditions',
+'Enteritis, necrotising'='GIT Infections',
+'Abomasal Haemorrhage'='GIT ulcer/perforation/foreign body',
+'Pleuropneumonia'='Respiratory Infections',
+'Hypocalcemia/ Milk Fever'='Nutritional/metabolic conditions',
+'Hereditary and developmental anomalies-other'='Hereditary and developmental abnormality',
+'Blackleg'='Clostridial disease',
+'Babesiosis'='Babesiosis',
+'Colitis'='GIT Infections',
+'Hepatitis'='Liver disease',
+'Abscessation-cardiac'='Cardiac/circulatory conditions',
+'Circulatory Defect'='Hereditary and developmental abnormality',
+'Enteritis and Hypogammaglubulinaemia'='GIT Infections',
+'Anaemia'='Cardiac/circulatory conditions',
+'Arthritis'='Integument/Musculoskeletal',
+'Hypoglycaemia'='Nutritional/metabolic conditions',
+'Malignant Catarrhal Fever'='Other Diagnosis',
+'Cerebro Cortical Necrosis'='CNS',
+'Parasitic Bronchitis'='Respiratory Infections',
+'Malignant Oedema'='Clostridial disease',
+'Tumour - Adenocarcinoma'='Tumour',
+'Louping ill'='CNS',
+'Shock'='Clostridial disease',
+'Urolithiasis'='Urinary Tract conditions',
+'Tumour - Lymphosarcoma'='Tumour',
+'Black Disease'='Clostridial disease',
+'Fatty liver'='Liver disease',
+'Paramphistomosis'='GIT Infections',
+'Hepatopathy'='Liver disease',
+'Fascioliosis - Chronic'='Liver disease',
+'Oesophagitis'='GIT Infections',
+'Heart failure'='Cardiac/circulatory conditions',
+'Abscessation-brain'='CNS',
+'PVC Thrombosis'='Cardiac/circulatory conditions',
+'Intestinal Haemorrhagic Syndrome'='Clostridial disease',
+'Haemolysis'='Cardiac/circulatory conditions',
+'Pleurisy'='Respiratory Infections',
+'Bloat'='Nutritional/metabolic conditions',
+'Intestinal obstruction'='GIT torsion/obstruction',
+'Lymphoid leukosis'='Tumour',
+'Hypogammaglobulinaemia'='Nutritional/metabolic conditions',
+'Coagulopathy'='Cardiac/circulatory conditions',
+'Septic Embolism'='Systemic Infections',
+'Enteritis and Hypogammaglubulinaemia'='GIT Infections',
+'Navel bleeding'='Navel Ill/Joint Ill',
+'Bovine Neonatal Pancytopenia'='Bovine Neonatal Pancytopaenia',
+'Arthritis'='Integument/Musculoskeletal',
+'Dehydration'='Nutritional/metabolic conditions',
+'Hepatopathy'='Liver disease',
+'Cardiac septal defect'='Hereditary and developmental abnormality',
+'Oesophageal Groove Dysfunction'='Nutritional/metabolic conditions',
+'Foreign body in GIT.'='GIT ulcer/perforation/foreign body',
+'Gastric Ulcer'='GIT ulcer/perforation/foreign body',
+'Myopathy'='Integument/Musculoskeletal',
+'Johnes disease'='Johne\'s Disease',
+'Stomatitis'='Integument/Musculoskeletal',
+'Pharyngitis'='Respiratory Infections',
+'Ringworm'='Integument/Musculoskeletal',
+'Bronchitis'='Respiratory Infections',
+'Oesophageal Rupture'='GIT ulcer/perforation/foreign body',
+'Intestinal Haemorrhagic Syndrome'='GIT Infections',
+'Lice'='Integument/Musculoskeletal',
+'Cardiomyopathy'='Cardiac/circulatory conditions',
+'Deficiency'='Nutritional/metabolic conditions',
+'Botulism'='Clostridial disease',
+'Choke'='GIT ulcer/perforation/foreign body',
+'Laryngeal chondritis'='Respiratory Infections',
+'Sinusitis'='Respiratory Infections',
+'TEME'='CNS',
+'Weak Calf Syndrome'='Systemic Infections',
+'BVD/Mucosal Disease'='BVD/Mucosal disease',
+'Uterine Prolapse'='Reproductive Tract Conditions',
+'Hepatopathy'='Liver disease',
+'Trauma'='Fractures/Calving injuries',
+'Tenosynovitis'='Integument/Musculoskeletal',
+'Bone disease'='Integument/Musculoskeletal',
+'Dwarfism/chondrodysplasia'='Integument/Musculoskeletal',
+'Eosinophilic myositis'='Integument/Musculoskeletal',
+'Patent ductus arteriosus'='Hereditary and developmental abnormality',
+'Braxy'='Clostridial disease',
+'Gangrene'='Systemic Infections',
+'Salmonellosis'='Systemic Infections',
+'Intestinal strangulation'='GIT torsion/obstruction',
+'Aortic rupture'='Cardiac/circulatory conditions',
+'Tetanus'='Clostridial disease',
+'Placentitis'='Reproductive Tract Conditions',
+'Demyelination'='CNS',
+'Fungal Infection'='Systemic Infections',
+'Enteritis'='GIT Infections',
+'Fog fever/allergic alveolitis'='Respiratory Infections',
+'IBR'='Respiratory Infections',
+'Pulmonary Oedema'='Respiratory Infections',
+'Asphyxiation'='Respiratory Infections',
+'Anoxia/hypoxia'='Nutritional/metabolic conditions',
+'Dermatitis'='Integument/Musculoskeletal',
+'Acidosis Metabolic'='Nutritional/metabolic conditions',
+'Hepatitis'='Poisoning',
+'Pneumonia - allergic'='Respiratory Infections',
+'Fungal Infection'='Respiratory Infections',
+'Hepatic encephalopathy'='Poisoning',
+'Tumour- Fibroma'='Tumour',
+'Pulpy Kidney Disease'='Clostridial disease',
+'Tick Borne Fever'='Tick Borne Fever',
+'Hepatic encephalopathy'='Liver disease',
+'Bacillary Haemoglobinuria'='Clostridial disease',
+'Lipidosis'='Liver disease',
+'Abomasitis- emphysematous'='Clostridial disease',
+'Fascioliosis - Acute'='Liver disease',
+'Impactation of the Rumen'='GIT torsion/obstruction',
+'Arteriosclerosis'='Cardiac/circulatory conditions',
+'Uterine Torsion'='Reproductive Tract Conditions',
+'Gastric stasis'='GIT torsion/obstruction',
+'Enteritis, atrophic'='GIT Infections',
+'Abortion'='Reproductive Tract Conditions',
+'Abortion Diagnosis not Reached'='Reproductive Tract Conditions',
+'Anaphylactic Shock'='Anaphylactic Shock',
+'Malignant Catarrhal Fever'='Malignant Catarrhal Fever',
+'Otitis'='Neuro-sensory',
+'Abscessation-spinal'='Neuro-sensory',
+'Mulberry Heart Disease'='Cardiac/circulatory conditions',
+'Photosensitisation'='Integument/Musculoskeletal',
+'Schmallenberg'='Hereditary and developmental abnormality',
+'Vaginal Prolapse'='Reproductive Tract Conditions',
+'Salt poisoning/water deprivation'='Nutritional/metabolic conditions',
+'FSE (focal symmetrical encephalomalacia)'='Neuro-sensory',
+'Enterotoxaemia-Clostridial'='Clostridial disease',
+"Ataxia of Charolais"='Hereditary and developmental abnormality',
+"Listeriosis"='CNS',
+"Electrocution"='Trauma',
+"Copper Deficiency"='Nutritional/metabolic conditions',
+"Nostril fly infestation"='Respiratory Infections',
+"Yersiniosis"='Systemic Infections',
+"Osteochondrosis"='Integument/Musculoskeletal',
+"Cardiac Tamponade"='Cardiac/circulatory conditions',
+"Acetonaemia/ketosis"='Nutritional/metabolic conditions',
+"Perinatal Mortality"='Reproductive Tract Conditions',
+"Infectious synovitis"='Integument/Musculoskeletal',
+"Pneumonia - Parasitic"='Respiratory Infections',
+.default= 'Unclassified'
+))
+
+
+
+
+datamapcarcasss <- datamaster %>% select(SAMPLE,HERD_NO,group,category) %>% mutate(DED=str_sub(str_replace_all(str_to_upper(HERD_NO),pattern=" |-|/|\\\\|_|'", repl=""),1,4)) %>% 
+  distinct(SAMPLE,.keep_all = TRUE  ) %>%   group_by(DED) %>% summarise(Count=n()) %>% filter(!is.na(DED))
+```
+
+
+```{r}
+
+
+IRELAND <- st_read("C:/Users/cosme.sanchez.AGRICULTURE/Desktop/BovineGroup/data/electoral_divisions.shp",stringsAsFactors=FALSE)
+
+IRELAND2 <- st_transform(IRELAND,crs=3857) %>% 
+  mutate(ID=paste(EDNAME,"-",CSOED)) #this add the identifier
+
+
+ALL_HERD_nos <- read_csv("C:/Users/cosme.sanchez.AGRICULTURE/Desktop/BovineGroup/data/ALL_HERD_nos.csv", 
+                         col_types = cols(ID = col_skip(), KEEPERNAME = col_skip(), 
+                                          Latitude = col_skip(), Longitude = col_skip(), 
+                                          SPECIES = col_skip(), X1 = col_skip(), 
+                                          X_COORD = col_skip(), Y_COORD = col_skip())) %>% 
+  distinct(Herd.no,.keep_all = TRUE)
+
+
+
+
+DED_IRELAND <- read_excel("C:/Users/cosme.sanchez.AGRICULTURE/Desktop/BovineGroup/data/DED_IRELAND.xlsx") %>% 
+  left_join(datamapcarcasss,by="DED")
+
+DED_IRELAND$Count[is.na(DED_IRELAND$Count)] <- 0
+
+DED_IRELAND <- ALL_HERD_nos %>% 
+  select(DED,WARD_NAME,DVO,Herd.no,HerdType,NoAmls) %>%
+  filter(!is.na(NoAmls)) %>% 
+  group_by(DED) %>% 
+  summarise(DEDTotal=sum(NoAmls),DEDMean=mean(NoAmls),DEDSd=sd(NoAmls)) %>% 
+  right_join(DED_IRELAND) %>% 
+  mutate(test2=abs((Count-DEDMean)/DEDSd),
+         flag2=if_else(Count>=1,"red","white"))
+
+
+DED_IRELAND2 <-  DED_IRELAND %>% 
+  mutate(ID=paste(EDNAME,"-",CSOED)) %>% 
+  group_by(ID) %>% 
+  summarise (Count=sum(Count),flag2) %>% ungroup()
+
+
+final <- left_join(IRELAND2,DED_IRELAND2,by="ID")#whole country
+
+final$Count[is.na(final$Count)] <- 0
+
+
+
+ireland_lon <- -7.6921
+ireland_lat <- 53.1424
+
+bins <- c(0, 5, 10, 15, 20, Inf)
+pal <- colorBin("YlOrRd", domain = final$Count, bins = bins)
+
+
+
+#leaflet(final) %>%
+ # setView(lng = ireland_lon, lat = ireland_lat, zoom = 7) %>%
+  #addProviderTiles("CartoDB.Positron") %>%
+  #addPolygons(
+  #fillColor = ~pal(final$Count),
+#  weight = 2,
+ # opacity = 1,
+ # color = "orange",
+ # dashArray = "3",
+ # fillOpacity = 0.7,
+ # highlight = highlightOptions(
+ #   weight = 5,
+#    color = "red",
+ #   dashArray = "",
+  #  fillOpacity = 0.7,
+   # bringToFront = TRUE))
+
+final <- rmapshaper::ms_simplify(final)
+
+labels <- paste("<p>", "<b>",IRELAND2$EDNAME,"</b>" ,"</p>",
+                "<p>","No. of cattle: ","<b>",format(round(final$Count,digits=2), nsmall=0, big.mark=","),"</b>","</p>",sep="")
+
+leaflet(final) %>% setView(-7, 53, zoom = 7) %>% 
+  addProviderTiles("CartoDB.Positron") %>% 
+  addPolygons(data=final,
+              weight = 8,
+              smoothFactor = 0.5,
+              color="red",
+              fillOpacity=0.8,
+              fillColor=pal(final$Count),
+              highlight=highlightOptions(
+                weight = 5,
+                color="orange",
+                fillOpacity = 0.7,
+                bringToFront = TRUE),
+              label=lapply(labels,HTML)) %>% 
+  addLegend(pal=pal,
+            values = final$Count,
+            opacity = 0.7,
+            "topright",title="Bovine P-Ms ")
+
+pal = mapviewPalette("mapviewTopoColors")
+mapview(final,alpha.regions = 0.1,zcol="Count",col.regions = pal(16), at = seq(0, 16, 2), legend = TRUE)
+
+
+```
+

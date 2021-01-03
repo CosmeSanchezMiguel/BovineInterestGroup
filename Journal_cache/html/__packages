@@ -1,1 +1,14 @@
 base
+leaflet
+sp
+rgdal
+dplyr
+sf
+ggplot2
+RColorBrewer
+readxl
+readr
+ggrepel
+mapview
+stringr
+htmltools
